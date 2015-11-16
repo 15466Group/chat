@@ -6,8 +6,9 @@ using System.Collections.Generic;
 
 public class NetworkScript : NetworkManager
 {
-
+	//system information -> network -> wifi address
 	public string connectionIP = "128.237.182.237";
+	//some ridiculous number
 	public int portNumber = 8271;
 	private string currentMessage = string.Empty;
 	private bool connected = false;
@@ -17,7 +18,7 @@ public class NetworkScript : NetworkManager
 
 	public List<string> chatHistory = new List<string> ();
 
-    public static short MSGType = 555;
+    //public static short MSGType = 555;
 
     // Use this for initialization
     void Start()
@@ -42,6 +43,8 @@ public class NetworkScript : NetworkManager
 //		connected = true;
 //	}
 
+
+	//automatically called when starting a client
     public override void OnStartClient(NetworkClient mClient)
     {
 		Debug.Log ("onstartclient called");
@@ -53,6 +56,7 @@ public class NetworkScript : NetworkManager
 
 
 
+	//automatically called when starting a server
     // hook into NetManagers server setup process
     public override void OnStartServer()
     {
@@ -70,6 +74,7 @@ public class NetworkScript : NetworkManager
 //		connected = true;
 //	}
 
+	//when a chat message reaches the server
     private void OnServerChatMessage(NetworkMessage netMsg)
     {
         var msg = netMsg.ReadMessage<StringMessage>();
@@ -77,13 +82,14 @@ public class NetworkScript : NetworkManager
 		MyMessages.ChatMessage chat = new MyMessages.ChatMessage ();
 		chat.message = msg.value;
 		NetworkServer.SendToAll((short) MyMessages.MyMessageTypes.CHAT_MESSAGE, chat);
-        button.GetComponent<ToggleScript>().ToggleColor();
+        //button.GetComponent<ToggleScript>().ToggleColor();
     }
 
+	//when a chat message reaches the client
     private void OnClientChatMessage(NetworkMessage netMsg)
     {
 		var msg = netMsg.ReadMessage <StringMessage>();
-        button.GetComponent<ToggleScript>().ToggleColor();
+        //button.GetComponent<ToggleScript>().ToggleColor();
 		chatHistory.Add (msg.value);
 
     }
@@ -93,23 +99,29 @@ public class NetworkScript : NetworkManager
 		if (!connected) {
 			connectionIP = GUILayout.TextField (connectionIP);
 			int.TryParse (GUILayout.TextField (portNumber.ToString()), out portNumber);
-			
+
+			//if connect button clicked
 			if (GUILayout.Button ("Connect")) {
 				this.networkAddress = connectionIP;
 				this.networkPort = portNumber;
 				this.StartClient();
 			}
-			
+
+			//if host button clicked
+			//a host is a server and a client at the same time
 			if (GUILayout.Button ("Host")) {
 				this.networkAddress = connectionIP;
 				this.networkPort = portNumber;
 				this.StartHost();
 			}
 		} else {
+			//wrong
 			GUILayout.Label ("Connections: " + Network.connections.Length.ToString ());
 		}
 
 		if (connected) {
+
+			//chat display
 			GUILayout.BeginHorizontal (GUILayout.Width (250));
 			currentMessage = GUILayout.TextField (currentMessage);
 			if (GUILayout.Button ("send")) {
