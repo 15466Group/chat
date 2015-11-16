@@ -7,7 +7,7 @@ using System.Collections.Generic;
 public class NetworkScript : NetworkManager
 {
 
-	public string connectionIP = "128.237.217.77";
+	public string connectionIP = "128.237.182.237";
 	public int portNumber = 8271;
 	private string currentMessage = string.Empty;
 	private bool connected = false;
@@ -32,11 +32,22 @@ public class NetworkScript : NetworkManager
 
     }
 
+
+
+//	public override void OnClientConnect(NetworkConnection conn) 
+//	{
+//		Debug.Log ("onclientconnect called");
+//		base.OnClientConnect(conn);
+//		//conn.RegisterHandler((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, OnClientChatMessage);
+//		connected = true;
+//	}
+
     public override void OnStartClient(NetworkClient mClient)
     {
+		Debug.Log ("onstartclient called");
 		base.OnStartClient(mClient);
-        //mClient.RegisterHandler(MSGType, OnClientChatMessage);
 		mClient.RegisterHandler((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, OnClientChatMessage);
+		//apparently OnStartClient automatically connects a client
 		connected = true;
     }
 
@@ -45,24 +56,32 @@ public class NetworkScript : NetworkManager
     // hook into NetManagers server setup process
     public override void OnStartServer()
     {
+		Debug.Log ("onstartserver called");
         base.OnStartServer(); //base is empty
-       // NetworkServer.RegisterHandler(MSGType, OnServerChatMessage);
 		NetworkServer.RegisterHandler((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, OnServerChatMessage);
 		connected = true;
     }
 
+//	public override void OnStartHost()
+//	{
+//		Debug.Log ("onstarthost called");
+//		base.OnStartHost ();
+//		NetworkServer.RegisterHandler((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, OnServerChatMessage);
+//		connected = true;
+//	}
+
     private void OnServerChatMessage(NetworkMessage netMsg)
     {
         var msg = netMsg.ReadMessage<StringMessage>();
+		Debug.Log ("new chat message on server");
 		MyMessages.ChatMessage chat = new MyMessages.ChatMessage ();
 		chat.message = msg.value;
-		NetworkServer.SendToAll((short) MyMessages.MyMessageTypes.CHAT_MESSAGE, msg);
+		NetworkServer.SendToAll((short) MyMessages.MyMessageTypes.CHAT_MESSAGE, chat);
         button.GetComponent<ToggleScript>().ToggleColor();
     }
 
     private void OnClientChatMessage(NetworkMessage netMsg)
     {
-        //IntegerMessage msg = netMsg.ReadMessage<IntegerMessage>();
 		var msg = netMsg.ReadMessage <StringMessage>();
         button.GetComponent<ToggleScript>().ToggleColor();
 		chatHistory.Add (msg.value);
@@ -71,30 +90,33 @@ public class NetworkScript : NetworkManager
 
 	private void OnGUI()
 	{
-//		if (!connected) {
-//			connectionIP = GUILayout.TextField (connectionIP);
-//			int.TryParse (GUILayout.TextField (portNumber.ToString()), out portNumber);
-//			
-//			if (GUILayout.Button ("Connect"))
-//				Network.Connect (connectionIP, portNumber);
-//			
-//			if (GUILayout.Button ("Host"))
-//				Network.InitializeServer (4, portNumber, true);
-//		} else {
-//			GUILayout.Label ("Connections: " + Network.connections.Length.ToString ());
-//		}
+		if (!connected) {
+			connectionIP = GUILayout.TextField (connectionIP);
+			int.TryParse (GUILayout.TextField (portNumber.ToString()), out portNumber);
+			
+			if (GUILayout.Button ("Connect")) {
+				this.networkAddress = connectionIP;
+				this.networkPort = portNumber;
+				this.StartClient();
+			}
+			
+			if (GUILayout.Button ("Host")) {
+				this.networkAddress = connectionIP;
+				this.networkPort = portNumber;
+				this.StartHost();
+			}
+		} else {
+			GUILayout.Label ("Connections: " + Network.connections.Length.ToString ());
+		}
 
-//		if (connected) {
-			GUILayout.BeginHorizontal (GUILayout.Width (280));
+		if (connected) {
+			GUILayout.BeginHorizontal (GUILayout.Width (250));
 			currentMessage = GUILayout.TextField (currentMessage);
 			if (GUILayout.Button ("send")) {
 				if (!string.IsNullOrEmpty (currentMessage.Trim ())) {
-					//GetComponent<NetworkView> ().RPC ("ChatMessage", RPCMode.AllBuffered, new object[] {currentMessage});
 					MyMessages.ChatMessage msg = new MyMessages.ChatMessage ();
 					msg.message = currentMessage;
 					NetworkManager.singleton.client.Send((short) MyMessages.MyMessageTypes.CHAT_MESSAGE, msg);
-//					NetworkManager.singleton.client.Send((short) MSGType, msg);
-					Debug.Log (NetworkManager.singleton.client);
 					currentMessage = string.Empty;
 				}
 			}
@@ -103,6 +125,6 @@ public class NetworkScript : NetworkManager
 			foreach (string c in chatHistory) {
 				GUILayout.Label (c);
 			}
-//		}
+		}
 	}
 }
