@@ -7,9 +7,11 @@ using System.Collections.Generic;
 public class NetworkScript : NetworkManager
 {
 	//system information -> network -> wifi address
-	public string connectionIP = "128.237.182.237";
+	//public string connectionIP = "128.237.182.237";
+	public string connectionIP = "localhost";
 	//some ridiculous number
-	public int portNumber = 8271;
+	//public int portNumber = 8271;
+	public int portNumber = 7777;
 	private string currentMessage = string.Empty;
 	private bool connected = false;
 
@@ -18,8 +20,8 @@ public class NetworkScript : NetworkManager
 
 	public List<string> chatHistory = new List<string> ();
 
-    //public static short MSGType = 555;
-
+    public static short MSGType = 555;
+	
     // Use this for initialization
     void Start()
     {
@@ -32,17 +34,13 @@ public class NetworkScript : NetworkManager
     {
 
     }
+	
 
-
-
-//	public override void OnClientConnect(NetworkConnection conn) 
-//	{
-//		Debug.Log ("onclientconnect called");
-//		base.OnClientConnect(conn);
-//		//conn.RegisterHandler((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, OnClientChatMessage);
-//		connected = true;
-//	}
-
+	public override void OnClientConnect(NetworkConnection conn) {
+		base.OnClientConnect (conn);
+		Debug.Log ("client is connected");
+		connected = true;
+	}
 
 	//automatically called when starting a client
     public override void OnStartClient(NetworkClient mClient)
@@ -50,10 +48,7 @@ public class NetworkScript : NetworkManager
 		Debug.Log ("onstartclient called");
 		base.OnStartClient(mClient);
 		mClient.RegisterHandler((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, OnClientChatMessage);
-		//apparently OnStartClient automatically connects a client
-		connected = true;
     }
-
 
 
 	//automatically called when starting a server
@@ -63,22 +58,14 @@ public class NetworkScript : NetworkManager
 		Debug.Log ("onstartserver called");
         base.OnStartServer(); //base is empty
 		NetworkServer.RegisterHandler((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, OnServerChatMessage);
-		connected = true;
+		//connected = true;
     }
-
-//	public override void OnStartHost()
-//	{
-//		Debug.Log ("onstarthost called");
-//		base.OnStartHost ();
-//		NetworkServer.RegisterHandler((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, OnServerChatMessage);
-//		connected = true;
-//	}
+	
 
 	//when a chat message reaches the server
     private void OnServerChatMessage(NetworkMessage netMsg)
     {
         var msg = netMsg.ReadMessage<StringMessage>();
-		Debug.Log ("new chat message on server");
 		MyMessages.ChatMessage chat = new MyMessages.ChatMessage ();
 		chat.message = msg.value;
 		NetworkServer.SendToAll((short) MyMessages.MyMessageTypes.CHAT_MESSAGE, chat);
@@ -106,7 +93,6 @@ public class NetworkScript : NetworkManager
 				this.networkPort = portNumber;
 				this.StartClient();
 			}
-
 			//if host button clicked
 			//a host is a server and a client at the same time
 			if (GUILayout.Button ("Host")) {
