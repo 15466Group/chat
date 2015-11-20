@@ -15,11 +15,13 @@ public class NetworkScript : NetworkManager
 	private string currentMessage = string.Empty;
 	private bool connected = false;
 
+	public string userName = "butts";
+
     bool toggle = false;
     public GameObject button;
 
 	public List<string> chatHistory = new List<string> ();
-
+	public List<string> users = new List<string>();
     public static short MSGType = 555;
 	
     // Use this for initialization
@@ -34,6 +36,7 @@ public class NetworkScript : NetworkManager
     {
 
     }
+	
 	
 
 	public override void OnClientConnect(NetworkConnection conn) {
@@ -71,21 +74,60 @@ public class NetworkScript : NetworkManager
 		NetworkServer.SendToAll((short) MyMessages.MyMessageTypes.CHAT_MESSAGE, chat);
         //button.GetComponent<ToggleScript>().ToggleColor();
     }
-
+	
 	//when a chat message reaches the client
     private void OnClientChatMessage(NetworkMessage netMsg)
     {
 		var msg = netMsg.ReadMessage <StringMessage>();
         //button.GetComponent<ToggleScript>().ToggleColor();
 		chatHistory.Add (msg.value);
-
     }
+
+
+
 
 	private void OnGUI()
 	{
 		if (!connected) {
-			connectionIP = GUILayout.TextField (connectionIP);
-			int.TryParse (GUILayout.TextField (portNumber.ToString()), out portNumber);
+//			GUILayout.BeginHorizontal (GUILayout.Width (Screen.width));
+//			GUILayout.Label ("Connection IP ");
+//			connectionIP = GUILayout.TextField (connectionIP);
+//			GUILayout.EndHorizontal ();
+//			GUILayout.BeginHorizontal ();
+//			GUILayout.Label ("Port Number ");
+//			int.TryParse (GUILayout.TextField (portNumber.ToString()), out portNumber);
+//			GUILayout.EndHorizontal ();
+//			GUILayout.BeginHorizontal ();
+//			GUILayout.Label ("Username ");
+//			userName = GUILayout.TextField (userName);
+//			GUILayout.EndHorizontal ();
+
+
+			GUILayout.BeginVertical (GUILayout.Width (300));
+			{
+				GUILayout.BeginHorizontal ();
+				{
+					GUILayout.Label ("Connection IP", GUILayout.Width (100));
+					connectionIP = GUILayout.TextField (connectionIP);
+				}
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+				{
+					GUILayout.Label ("Port Number ", GUILayout.Width (100));
+					int.TryParse (GUILayout.TextField (portNumber.ToString()), out portNumber);
+				}
+				GUILayout.EndHorizontal ();
+				GUILayout.BeginHorizontal ();
+				{
+					GUILayout.Label ("Username ", GUILayout.Width (100));
+					userName = GUILayout.TextField (userName);
+				}
+				GUILayout.EndHorizontal ();
+
+
+			}
+			GUILayout.EndVertical ();
+
 
 			//if connect button clicked
 			if (GUILayout.Button ("Connect")) {
@@ -102,27 +144,46 @@ public class NetworkScript : NetworkManager
 			}
 		} else {
 			//wrong
-			GUILayout.Label ("Connections: " + Network.connections.Length.ToString ());
+			GUILayout.Label ("Connections: " + users.Count);
 		}
 
 		if (connected) {
+			
+			GUIStyle s = new GUIStyle(GUIStyle.none);
+			//s.fixedHeight = 200f;
+			GUILayout.BeginScrollView (new Vector3(0f, 100000f, 0f), s);
+			foreach (string c in chatHistory) {
+				GUILayout.Label (c);
+			}
+			GUILayout.EndScrollView();
 
 			//chat display
 			GUILayout.BeginHorizontal (GUILayout.Width (250));
 			currentMessage = GUILayout.TextField (currentMessage);
-			if (GUILayout.Button ("send")) {
-				if (!string.IsNullOrEmpty (currentMessage.Trim ())) {
-					MyMessages.ChatMessage msg = new MyMessages.ChatMessage ();
-					msg.message = currentMessage;
-					NetworkManager.singleton.client.Send((short) MyMessages.MyMessageTypes.CHAT_MESSAGE, msg);
-					currentMessage = string.Empty;
+			if(Event.current.isKey) {
+				switch (Event.current.keyCode) {
+				case KeyCode.Return:
+					sendMessage();
+					break;
 				}
 			}
-			GUILayout.EndHorizontal ();
-		
-			foreach (string c in chatHistory) {
-				GUILayout.Label (c);
+			//currentMessage = GUILayout.TextField (currentMessage);
+			if (GUILayout.Button ("send")) {
+				sendMessage();
 			}
+
+			GUILayout.EndHorizontal ();
+
 		}
 	}
+
+	void sendMessage() {
+		if (!string.IsNullOrEmpty (currentMessage.Trim ())) {
+			MyMessages.ChatMessage msg = new MyMessages.ChatMessage ();
+			msg.message = userName + ": " + currentMessage;
+			NetworkManager.singleton.client.Send ((short)MyMessages.MyMessageTypes.CHAT_MESSAGE, msg);
+			currentMessage = string.Empty;
+		}
+	}
+
 }
